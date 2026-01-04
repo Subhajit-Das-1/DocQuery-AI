@@ -269,10 +269,16 @@ def call_llm(prompt):
         return "❌ Not enough content to answer."
 
     response = client.chat.completions.create(
-        model="llama3-8b-8192",
+        model="llama-3.1-8b-instant",   # ✅ UPDATED MODEL
         messages=[
-            {"role": "system", "content": "You are a helpful AI assistant. Answer strictly from the given context."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are a helpful AI assistant. Answer strictly using the given context."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
         ],
         temperature=0.2,
         max_tokens=512
@@ -296,9 +302,7 @@ def summarize_pdfs(selected_pdfs):
     if not all_text:
         return "❌ No content available to summarize."
 
-    # HARD character limit (Groq-safe)
-    combined_text = "\n".join(all_text)
-    combined_text = combined_text[:4000]
+    combined_text = "\n".join(all_text)[:4000]
 
     prompt = f"""
 Summarize the following document clearly and briefly.
@@ -328,8 +332,7 @@ def explain_page(page_number, selected_pdfs):
     if not page_text:
         return f"❌ No content found on page {page_number}."
 
-    combined_text = "\n".join(page_text)
-    combined_text = combined_text[:4000]
+    combined_text = "\n".join(page_text)[:4000]
 
     prompt = f"""
 Explain the following page content in simple terms:
@@ -376,7 +379,6 @@ def query_pdfs(question, selected_pdfs, k=4):
         meta = load_meta(pdf)
 
         D, I = index.search(q_emb, k)
-
         for idx in I[0]:
             if idx < len(meta):
                 all_chunks.append(meta[idx])
@@ -392,10 +394,7 @@ def query_pdfs(question, selected_pdfs, k=4):
         f"Section: {c.get('section','Unknown')} | "
         f"Page {c.get('page','?')}): {c.get('text','')}"
         for c in all_chunks
-    )
-
-    # HARD context limit
-    context = context[:4000]
+    )[:4000]
 
     prompt = f"""
 Answer ONLY using the information below.
@@ -423,4 +422,3 @@ Question:
 
 📌 Sources:
 """ + "\n".join(f"• {s}" for s in sources)
-
