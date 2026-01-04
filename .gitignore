@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+.env/
+
+# Streamlit cache
+.streamlit/
+
+# FAISS indexes (generated files)
+data/faiss_indexes/
+
+# OS files
+.DS_Store
+Thumbs.db
