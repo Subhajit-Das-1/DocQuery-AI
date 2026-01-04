@@ -262,15 +262,23 @@ def load_meta(pdf):
         return pickle.load(f)
 
 # -------------------------------
-# LLM Call (Groq)
+# LLM Call (Groq-safe)
 # -------------------------------
 def call_llm(prompt):
+    if not prompt or len(prompt.strip()) < 30:
+        return "❌ Not enough content to answer."
+
     response = client.chat.completions.create(
         model="llama3-8b-8192",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3
+        messages=[
+            {"role": "system", "content": "You are a helpful AI assistant. Answer strictly from the given context."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.2,
+        max_tokens=512
     )
-    return response.choices[0].message.content
+
+    return response.choices[0].message.content.strip()
 
 # -------------------------------
 # PDF Summary
@@ -283,20 +291,23 @@ def summarize_pdfs(selected_pdfs):
         if not meta:
             continue
         for c in meta:
-            all_text.append(c["text"])
+            all_text.append(c.get("text", ""))
 
     if not all_text:
-        return "❌ No content available."
+        return "❌ No content available to summarize."
 
-    combined_text = "\n".join(all_text[:3000])
+    # HARD character limit (Groq-safe)
+    combined_text = "\n".join(all_text)
+    combined_text = combined_text[:4000]
 
     prompt = f"""
 Summarize the following document clearly and briefly.
-Do not add information outside the document.
+Do NOT add information outside the document.
 
 Content:
 {combined_text}
 """
+
     return call_llm(prompt)
 
 # -------------------------------
@@ -309,20 +320,23 @@ def explain_page(page_number, selected_pdfs):
         meta = load_meta(pdf)
         if not meta:
             continue
+
         for c in meta:
-            if c["page"] == page_number:
-                page_text.append(c["text"])
+            if c.get("page") == page_number:
+                page_text.append(c.get("text", ""))
 
     if not page_text:
-        return f"❌ No content found on page {page_number}"
+        return f"❌ No content found on page {page_number}."
 
-    combined_text = "\n".join(page_text[:3000])
+    combined_text = "\n".join(page_text)
+    combined_text = combined_text[:4000]
 
     prompt = f"""
 Explain the following page content in simple terms:
 
 {combined_text}
 """
+
     return call_llm(prompt)
 
 # -------------------------------
@@ -331,19 +345,22 @@ Explain the following page content in simple terms:
 def query_pdfs(question, selected_pdfs, k=4):
     q_lower = question.lower()
 
-    # Page intent
-    if any(k in q_lower for k in PAGE_KEYWORDS):
+    # 🔹 Page intent
+    if any(key in q_lower for key in PAGE_KEYWORDS):
         nums = re.findall(r"\d+", q_lower)
         if nums:
             return explain_page(int(nums[0]), selected_pdfs)
 
-    # Summary intent
-    if any(k in q_lower for k in SUMMARY_KEYWORDS):
+    # 🔹 Summary intent
+    if any(key in q_lower for key in SUMMARY_KEYWORDS):
         return summarize_pdfs(selected_pdfs)
 
-    # FAISS QA
+    # 🔹 FAISS QA
     all_chunks = []
-    q_emb = model.encode([question], normalize_embeddings=True).astype("float32")
+    q_emb = model.encode(
+        [question],
+        normalize_embeddings=True
+    ).astype("float32")
 
     missing = []
 
@@ -359,6 +376,7 @@ def query_pdfs(question, selected_pdfs, k=4):
         meta = load_meta(pdf)
 
         D, I = index.search(q_emb, k)
+
         for idx in I[0]:
             if idx < len(meta):
                 all_chunks.append(meta[idx])
@@ -367,15 +385,21 @@ def query_pdfs(question, selected_pdfs, k=4):
         return f"❌ Missing indexes: {', '.join(missing)}"
 
     if not all_chunks:
-        return "❌ Answer not found."
+        return "❌ Answer not found in selected PDFs."
 
     context = "\n".join(
-        f"(PDF: {c['pdf_name']} | Section: {c.get('section','Unknown')} | Page {c['page']}): {c['text']}"
+        f"(PDF: {c.get('pdf_name','Unknown')} | "
+        f"Section: {c.get('section','Unknown')} | "
+        f"Page {c.get('page','?')}): {c.get('text','')}"
         for c in all_chunks
     )
 
+    # HARD context limit
+    context = context[:4000]
+
     prompt = f"""
-Answer ONLY from the context below.
+Answer ONLY using the information below.
+Do NOT add external knowledge.
 
 Context:
 {context}
@@ -389,7 +413,7 @@ Question:
     confidence = min(95, 50 + len(set(c["page"] for c in all_chunks)) * 8)
 
     sources = sorted({
-        f"{c['pdf_name']} | {c.get('section','Unknown')} | Page {c['page']}"
+        f"{c.get('pdf_name','Unknown')} | {c.get('section','Unknown')} | Page {c.get('page','?')}"
         for c in all_chunks
     })
 
@@ -399,3 +423,4 @@ Question:
 
 📌 Sources:
 """ + "\n".join(f"• {s}" for s in sources)
+
