@@ -1,9 +1,36 @@
 # 📘 DocQuery-AI  
-**Offline Multi-PDF AI Question Answering System**
+**Multi-PDF AI Question Answering System (Local + Cloud)**
 
-DocQuery-AI is an advanced **offline AI-powered document intelligence system** that allows users to upload, select, and query multiple PDF documents using **semantic search and a local LLM**, without any cloud APIs or billing.
+DocQuery-AI is an advanced **AI-powered document intelligence system** that allows users to upload, select, and query multiple PDF documents using **semantic search and Retrieval-Augmented Generation (RAG)**.
 
-Built with a **Retrieval-Augmented Generation (RAG)** architecture, DocQuery-AI ensures accurate, source-grounded answers with page-level and section-level citations.
+It supports **both offline (local LLM)** and **online (cloud LLM)** modes, ensuring flexibility for development, privacy, and deployment.
+
+Answers are **strictly grounded in the uploaded PDFs**, with **page-level and section-level citations** to prevent hallucinations.
+
+---
+
+## 🌐 Live Demo (Cloud Mode)
+
+🚀 **DocQuery-AI is live here:**  
+👉 https://docquery-ai-o9hwz6rjgeah75ytyv6l9y.streamlit.app/
+
+> ⚡ This live deployment uses **Groq LLM (`llama-3.1-8b-instant`)** for fast, free cloud inference.
+
+---
+
+## 🧠 LLM Modes Supported
+
+### 🔹 Cloud Mode (Current Live Demo)
+- **LLM:** Groq – `llama-3.1-8b-instant`
+- **Inference:** Cloud-based
+- **Cost:** Free tier (no billing)
+- **Best for:** Deployment, demos, sharing
+
+### 🔹 Offline Mode (Local Setup)
+- **LLM:** Ollama (e.g., Phi, Mistral)
+- **Inference:** Fully local
+- **Internet:** Not required
+- **Best for:** Privacy-focused & offline use
 
 ---
 
@@ -11,13 +38,13 @@ Built with a **Retrieval-Augmented Generation (RAG)** architecture, DocQuery-AI 
 
 - 📂 **Multi-PDF Upload & Selection**
 - 🔍 **Semantic Search using FAISS**
-- 🧠 **Local LLM (Ollama) – Fully Offline**
+- 🧠 **LLM-powered Answers (Groq or Ollama)**
 - 📄 **Page-wise & Section-wise Explanations**
 - 🧾 **Source Citations (PDF | Section | Page)**
-- 📊 **Confidence Scoring for Answers**
-- 🛡️ **Hallucination Control (Answers only from PDFs)**
-- ⚡ **Fast & Lightweight UI with Streamlit**
-- 💸 **Zero API cost – No billing required**
+- 📊 **Confidence Scoring**
+- 🛡️ **Hallucination Control (PDF-grounded answers only)**
+- ⚡ **Fast & Lightweight UI (Streamlit)**
+- 💸 **No mandatory billing required**
 
 ---
 
